@@ -23,8 +23,8 @@
   .header { background: #111; border-radius: var(--border-radius-lg); padding: 2rem 1.5rem 1.5rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; position: relative; overflow: hidden; }
   .header-img { width: 100%; height: 120px; object-fit: cover; border-radius: var(--border-radius-md); opacity: 0.45; position: absolute; top: 0; left: 0; }
   .header-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
-  .logo-wrap { width: 72px; height: 72px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #E05A2B; }
-  .logo-svg { width: 48px; height: 48px; }
+  .logo-wrap { width: 80px; height: 80px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #E05A2B; padding: 8px; }
+  .logo-img { width: 100%; height: 100%; object-fit: contain; }
   .header-title { color: #fff; font-size: 20px; font-weight: 500; text-align: center; }
   .header-sub { color: rgba(255,255,255,0.6); font-size: 13px; text-align: center; }
 
@@ -35,18 +35,16 @@
 
   .scale-row { display: flex; align-items: center; gap: 8px; }
   .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; }
-  input[type=range] { width: 100%; }
+  input[type=range] { width: 100%; accent-color: #E05A2B; }
+  input[type=range].untouched { accent-color: #ccc; }
   .scale-val { font-size: 18px; font-weight: 500; min-width: 32px; text-align: center; color: var(--color-text-primary); }
+  .scale-val.placeholder { color: var(--color-text-secondary); font-size: 14px; }
 
   .emoji-row { display: flex; gap: 6px; flex-wrap: wrap; }
   .emoji-btn { flex: 1; min-width: 48px; padding: 10px 4px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); cursor: pointer; font-size: 20px; text-align: center; transition: border-color 0.15s, background 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .emoji-btn span { font-size: 10px; color: var(--color-text-secondary); }
   .emoji-btn.selected { border: 1.5px solid #E05A2B; background: #fff3ee; }
   .emoji-btn.selected span { color: #E05A2B; }
-
-  .pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .pill { padding: 7px 14px; border: 0.5px solid var(--color-border-tertiary); border-radius: 99px; background: var(--color-background-secondary); cursor: pointer; font-size: 13px; color: var(--color-text-primary); transition: border-color 0.15s, background 0.15s; }
-  .pill.selected { border: 1.5px solid #E05A2B; background: #fff3ee; color: #E05A2B; }
 
   textarea { width: 100%; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; font-size: 14px; font-family: var(--font-sans); color: var(--color-text-primary); background: var(--color-background-secondary); resize: vertical; min-height: 90px; }
   textarea::placeholder { color: var(--color-text-secondary); }
@@ -56,18 +54,20 @@
   .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .error-msg { display: none; background: #fff0ee; border: 0.5px solid #E05A2B; color: #b8421f; font-size: 13px; padding: 10px 12px; border-radius: var(--border-radius-md); margin-top: 0.75rem; }
+  .validation-msg { display: none; background: #fff8e1; border: 0.5px solid #f0a500; color: #7a5200; font-size: 13px; padding: 10px 12px; border-radius: var(--border-radius-md); margin-top: 0.75rem; }
 
   .success { display: none; text-align: center; padding: 2.5rem 1.5rem; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); }
   .success .check { width: 56px; height: 56px; background: #E05A2B; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
   .success h2 { font-size: 18px; font-weight: 500; margin-bottom: 0.5rem; }
   .success p { font-size: 14px; color: var(--color-text-secondary); }
 
-  .player-input { width: 100%; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; font-size: 14px; font-family: var(--font-sans); color: var(--color-text-primary); background: var(--color-background-secondary); }
+  .player-input, .text-input { width: 100%; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; font-size: 14px; font-family: var(--font-sans); color: var(--color-text-primary); background: var(--color-background-secondary); }
   .player-input[readonly] { background: #ececec; color: var(--color-text-secondary); }
+
+  .field-error { border-color: #E05A2B !important; }
 </style>
 </head>
 <body>
-
 <div class="wrap">
   <div class="header">
     <svg class="header-img" viewBox="0 0 680 120" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
@@ -80,106 +80,97 @@
     </svg>
     <div class="header-content">
       <div class="logo-wrap">
-        <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="50,10 75,35 65,45 50,28 35,45 25,35" fill="#E05A2B"/>
-          <polygon points="35,45 50,28 65,45 50,62" fill="#E05A2B"/>
-          <polygon points="50,62 65,45 80,60 65,90 50,75" fill="#555"/>
-          <polygon points="50,62 35,45 20,60 35,90 50,75" fill="#3a3a3a" opacity="0.7"/>
-        </svg>
+        <img class="logo-img" src="data:image/png;base64,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" alt="Génesis FC">
       </div>
       <div class="header-title">Cuestionario de recuperación</div>
-      <div class="header-sub">Génesis FC · Rellena esto la mañana después del entrenamiento</div>
+      <div class="header-sub">Rellena esto la mañana después del entrenamiento</div>
     </div>
   </div>
 
   <div id="form-body">
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-user" aria-hidden="true"></i> Jugador</div>
+      <div class="section-label"><i class="ti ti-user"></i> Jugador</div>
       <div class="q-title">¿Cuál es tu nombre?</div>
       <input class="player-input" type="text" id="playerName" placeholder="Nombre y apellido..." />
     </div>
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-moon" aria-hidden="true"></i> Sueño y descanso</div>
+      <div class="section-label"><i class="ti ti-moon"></i> Sueño y descanso</div>
       <div class="q-title">¿Cómo has dormido esta noche?</div>
       <div class="q-sub">1 = muy mal · 10 = perfectamente</div>
       <div class="scale-row">
         <span style="font-size:12px;color:var(--color-text-secondary);">1</span>
-        <input type="range" min="1" max="10" value="7" id="sleep" oninput="upd('sleep','sleepVal')">
-        <span class="scale-val" id="sleepVal">7</span>
+        <input type="range" min="1" max="10" value="5" id="sleep" class="untouched" oninput="upd('sleep','sleepVal')">
+        <span class="scale-val placeholder" id="sleepVal">—</span>
       </div>
       <div class="scale-labels"><span>Muy mal</span><span>Perfectamente</span></div>
     </div>
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-bolt" aria-hidden="true"></i> Nivel de energía</div>
+      <div class="section-label"><i class="ti ti-bolt"></i> Nivel de energía</div>
       <div class="q-title">¿Cómo te sientes de energía ahora mismo?</div>
       <div class="q-sub">1 = sin energía · 10 = lleno de energía</div>
       <div class="scale-row">
         <span style="font-size:12px;color:var(--color-text-secondary);">1</span>
-        <input type="range" min="1" max="10" value="7" id="energy" oninput="upd('energy','energyVal')">
-        <span class="scale-val" id="energyVal">7</span>
+        <input type="range" min="1" max="10" value="5" id="energy" class="untouched" oninput="upd('energy','energyVal')">
+        <span class="scale-val placeholder" id="energyVal">—</span>
       </div>
       <div class="scale-labels"><span>Sin energía</span><span>Lleno de energía</span></div>
     </div>
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-activity" aria-hidden="true"></i> Fatiga muscular</div>
+      <div class="section-label"><i class="ti ti-activity"></i> Fatiga muscular</div>
       <div class="q-title">¿Cuánta fatiga muscular tienes en las piernas?</div>
       <div class="q-sub">1 = ninguna · 10 = muy cargadas</div>
       <div class="scale-row">
         <span style="font-size:12px;color:var(--color-text-secondary);">1</span>
-        <input type="range" min="1" max="10" value="4" id="fatigue" oninput="upd('fatigue','fatigueVal')">
-        <span class="scale-val" id="fatigueVal">4</span>
+        <input type="range" min="1" max="10" value="5" id="fatigue" class="untouched" oninput="upd('fatigue','fatigueVal')">
+        <span class="scale-val placeholder" id="fatigueVal">—</span>
       </div>
       <div class="scale-labels"><span>Ninguna</span><span>Muy cargadas</span></div>
     </div>
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-mood-smile" aria-hidden="true"></i> Estado de ánimo</div>
+      <div class="section-label"><i class="ti ti-mood-smile"></i> Estado de ánimo</div>
       <div class="q-title">¿Cómo es tu estado de ánimo hoy?</div>
       <div class="emoji-row" id="moodRow">
         <div class="emoji-btn" onclick="sel('moodRow',this)" data-val="1">😔<span>Bajo</span></div>
         <div class="emoji-btn" onclick="sel('moodRow',this)" data-val="2">😐<span>Normal</span></div>
-        <div class="emoji-btn selected" onclick="sel('moodRow',this)" data-val="3">🙂<span>Bien</span></div>
+        <div class="emoji-btn" onclick="sel('moodRow',this)" data-val="3">🙂<span>Bien</span></div>
         <div class="emoji-btn" onclick="sel('moodRow',this)" data-val="4">😄<span>Muy bien</span></div>
         <div class="emoji-btn" onclick="sel('moodRow',this)" data-val="5">🔥<span>Excelente</span></div>
       </div>
     </div>
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-first-aid-kit" aria-hidden="true"></i> Molestias físicas</div>
+      <div class="section-label"><i class="ti ti-first-aid-kit"></i> Molestias físicas</div>
       <div class="q-title">¿Tienes alguna molestia o dolor?</div>
-      <div class="pill-row" id="painRow">
-        <div class="pill selected" onclick="selPain(this)" data-val="ninguna">Sin molestias</div>
-        <div class="pill" onclick="selPain(this)" data-val="muscular">Muscular</div>
-        <div class="pill" onclick="selPain(this)" data-val="articular">Articular</div>
-        <div class="pill" onclick="selPain(this)" data-val="tendon">Tendón</div>
-        <div class="pill" onclick="selPain(this)" data-val="otro">Otro</div>
-      </div>
+      <div class="q-sub">Si tienes alguna molestia, descríbela aquí.</div>
+      <textarea id="pain" class="text-input" placeholder="Ej: dolor en el gemelo izquierdo, molestia en la rodilla... Si no tienes ninguna, escribe 'Sin molestias'."></textarea>
     </div>
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-chart-line" aria-hidden="true"></i> Valoración del entrenamiento</div>
+      <div class="section-label"><i class="ti ti-chart-line"></i> Valoración del entrenamiento</div>
       <div class="q-title">¿Cómo valorarías la intensidad del entrenamiento de ayer?</div>
       <div class="q-sub">1 = muy suave · 10 = muy exigente (RPE)</div>
       <div class="scale-row">
         <span style="font-size:12px;color:var(--color-text-secondary);">1</span>
-        <input type="range" min="1" max="10" value="6" id="rpe" oninput="upd('rpe','rpeVal')">
-        <span class="scale-val" id="rpeVal">6</span>
+        <input type="range" min="1" max="10" value="5" id="rpe" class="untouched" oninput="upd('rpe','rpeVal')">
+        <span class="scale-val placeholder" id="rpeVal">—</span>
       </div>
       <div class="scale-labels"><span>Muy suave</span><span>Muy exigente</span></div>
     </div>
 
     <div class="section">
-      <div class="section-label"><i class="ti ti-message" aria-hidden="true"></i> Sensaciones</div>
-      <div class="q-title">Cuéntanos cómo te has sentido</div>
-      <div class="q-sub">Cómo saliste del entrenamiento, si hay algo que quieras comentar al entrenador...</div>
-      <textarea id="feelings" placeholder="Escribe aquí tus sensaciones, comentarios o cualquier cosa que consideres importante..."></textarea>
+      <div class="section-label"><i class="ti ti-run"></i> Trabajo complementario</div>
+      <div class="q-title">¿Has realizado algún trabajo complementario por tu cuenta?</div>
+      <div class="q-sub">Por ejemplo: gimnasio, pádel, salir a correr, etc. Si es que sí, indica qué has hecho.</div>
+      <textarea id="extra" placeholder="Ej: 45 min en el gimnasio, partida de pádel... Si no has hecho nada extra, escribe 'No'."></textarea>
     </div>
 
     <button class="submit-btn" id="submitBtn" onclick="submitForm()">Enviar respuestas ↗</button>
+    <div class="validation-msg" id="validationMsg">Por favor, completa todos los campos antes de enviar.</div>
     <div class="error-msg" id="errorMsg">No se ha podido enviar. Comprueba tu conexión e inténtalo de nuevo.</div>
   </div>
 
@@ -191,16 +182,14 @@
 </div>
 
 <script>
-  // ⚠️ Sustituye esta URL por la "Production URL" del nodo Webhook en n8n
-  // (la URL de "test" solo funciona mientras tienes el workflow abierto en el editor).
   const WEBHOOK_URL = 'https://n8n.otterflow.io/webhook/genesis-recovery-submit';
+
+  const touched = { sleep: false, energy: false, fatigue: false, rpe: false };
 
   function getParam(name) {
     return new URLSearchParams(window.location.search).get(name);
   }
 
-  // Si el link incluye ?id=...&jugador=Nombre, precarga y bloquea el nombre
-  // para evitar errores de tecleo y poder vincular la respuesta a un jugador concreto.
   window.addEventListener('DOMContentLoaded', () => {
     const nameParam = getParam('jugador');
     if (nameParam) {
@@ -211,51 +200,61 @@
   });
 
   function upd(id, outId) {
-    document.getElementById(outId).textContent = document.getElementById(id).value;
+    const val = document.getElementById(id).value;
+    const out = document.getElementById(outId);
+    out.textContent = val;
+    out.classList.remove('placeholder');
+    document.getElementById(id).classList.remove('untouched');
+    touched[id] = true;
   }
+
   function sel(rowId, el) {
     document.querySelectorAll('#' + rowId + ' .emoji-btn').forEach(b => b.classList.remove('selected'));
     el.classList.add('selected');
   }
-  function selPain(el) {
-    document.querySelectorAll('#painRow .pill').forEach(p => p.classList.remove('selected'));
-    el.classList.add('selected');
+
+  function validate() {
+    const name = document.getElementById('playerName').value.trim();
+    const mood = document.querySelector('#moodRow .selected');
+    const pain = document.getElementById('pain').value.trim();
+    const extra = document.getElementById('extra').value.trim();
+
+    if (!name) { document.getElementById('playerName').classList.add('field-error'); return false; }
+    if (!touched.sleep) { document.getElementById('sleep').classList.add('field-error'); return false; }
+    if (!touched.energy) { document.getElementById('energy').classList.add('field-error'); return false; }
+    if (!touched.fatigue) { document.getElementById('fatigue').classList.add('field-error'); return false; }
+    if (!mood) return false;
+    if (!pain) { document.getElementById('pain').classList.add('field-error'); return false; }
+    if (!touched.rpe) { document.getElementById('rpe').classList.add('field-error'); return false; }
+    if (!extra) { document.getElementById('extra').classList.add('field-error'); return false; }
+    return true;
   }
 
   async function submitForm() {
-    const name = document.getElementById('playerName').value.trim();
-    if (!name) { document.getElementById('playerName').focus(); return; }
+    document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+    document.getElementById('validationMsg').style.display = 'none';
+    document.getElementById('errorMsg').style.display = 'none';
+
+    if (!validate()) {
+      document.getElementById('validationMsg').style.display = 'block';
+      return;
+    }
 
     const btn = document.getElementById('submitBtn');
-    const errorMsg = document.getElementById('errorMsg');
-    errorMsg.style.display = 'none';
     btn.disabled = true;
     btn.textContent = 'Enviando...';
 
     const payload = {
       jugador_id: getParam('id') || null,
-      jugador: name,
+      jugador: document.getElementById('playerName').value.trim(),
       sueno: Number(document.getElementById('sleep').value),
       energia: Number(document.getElementById('energy').value),
       fatiga_muscular: Number(document.getElementById('fatigue').value),
       estado_animo: document.querySelector('#moodRow .selected')?.dataset.val || null,
-      molestia: document.querySelector('#painRow .selected')?.dataset.val || null,
+      molestia: document.getElementById('pain').value.trim(),
       rpe_ayer: Number(document.getElementById('rpe').value),
-      sensaciones: document.getElementById('feelings').value.trim()
+      sensaciones: document.getElementById('extra').value.trim()
     };
-
-    // Modo demo: mientras WEBHOOK_URL siga siendo el placeholder, simula el envío
-    // (no intenta conectar a ningún sitio). Útil para mostrar el formulario al
-    // cliente antes de tener el webhook de n8n montado. Se desactiva solo en
-    // cuanto sustituyas WEBHOOK_URL por la URL de producción real.
-    if (WEBHOOK_URL.includes('TU-DOMINIO-N8N')) {
-      console.warn('[Modo demo] Webhook no configurado todavía. Datos que se habrían enviado:', payload);
-      setTimeout(() => {
-        document.getElementById('form-body').style.display = 'none';
-        document.getElementById('success').style.display = 'block';
-      }, 400);
-      return;
-    }
 
     try {
       const res = await fetch(WEBHOOK_URL, {
@@ -264,12 +263,11 @@
         body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-
       document.getElementById('form-body').style.display = 'none';
       document.getElementById('success').style.display = 'block';
     } catch (err) {
       console.error('Error enviando el formulario:', err);
-      errorMsg.style.display = 'block';
+      document.getElementById('errorMsg').style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Enviar respuestas ↗';
     }
