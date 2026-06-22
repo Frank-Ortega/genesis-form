@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Génesis FC · Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --orange: #E05A2B;
+    --dark: #111111;
+    --gray-900: #1a1a1a;
+    --gray-800: #2a2a2a;
+    --gray-700: #3a3a3a;
+    --gray-200: #e8e8e8;
+    --gray-100: #f4f4f4;
+    --white: #ffffff;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--gray-100); font-family: var(--font); color: var(--gray-900); }
+
+  /* HEADER */
+  .topbar {
+    background: var(--dark);
+    padding: 0 1.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo { width: 36px; height: 36px; }
+  .topbar-title { color: var(--white); font-size: 15px; font-weight: 600; }
+  .topbar-sub { color: rgba(255,255,255,0.45); font-size: 12px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .refresh-btn {
+    background: var(--orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .refresh-btn:hover { opacity: 0.85; }
+  .last-update { color: rgba(255,255,255,0.4); font-size: 11px; }
+
+  /* FILTRO JUGADOR */
+  .filter-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    padding: 10px 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-label { font-size: 12px; color: #666; font-weight: 500; }
+  .filter-pill {
+    padding: 5px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--gray-200);
+    background: var(--gray-100);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--gray-900);
+  }
+  .filter-pill.active {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: white;
+    font-weight: 500;
+  }
+
+  /* LAYOUT */
+  .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+  /* ALERTAS */
+  .alerts { margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 8px; }
+  .alert {
+    background: #fff3f0;
+    border: 1px solid #ffd5c8;
+    border-left: 4px solid var(--orange);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .alert-icon { font-size: 16px; }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .kpi {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.1rem 1rem;
+    border: 1px solid var(--gray-200);
+  }
+  .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi-val { font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-val.good { color: var(--green); }
+  .kpi-val.warn { color: var(--yellow); }
+  .kpi-val.bad { color: var(--red); }
+  .kpi-val.neutral { color: var(--gray-900); }
+  .kpi-sub { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+  /* CHARTS */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    border: 1px solid var(--gray-200);
+  }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 1rem; }
+
+  /* TABLA */
+  .table-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .table-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--gray-200); }
+  .table-header h3 { font-size: 13px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--gray-100); padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--gray-200); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--gray-200); color: var(--gray-900); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--gray-100); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    color: #999;
+    font-size: 14px;
+    gap: 12px;
+  }
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty { text-align: center; padding: 3rem; color: #aaa; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <svg class="topbar-logo" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="30,5 50,25 42,33 30,20 18,33 10,25" fill="#E05A2B"/>
+      <polygon points="18,33 30,20 42,33 30,46" fill="#E05A2B"/>
+      <polygon points="30,46 42,33 55,46 42,70 30,58" fill="#555"/>
+      <polygon points="30,46 18,33 5,46 18,70 30,58" fill="#3a3a3a"/>
+    </svg>
+    <div>
+      <div class="topbar-title">Génesis FC · Dashboard</div>
+      <div class="topbar-sub">Seguimiento de recuperación</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="last-update" id="lastUpdate">—</span>
+    <button class="refresh-btn" onclick="loadData()">↻ Actualizar</button>
+  </div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <span class="filter-label">Jugador:</span>
+  <div class="filter-pill active" onclick="setPlayer('todos', this)">Todos</div>
+</div>
+
+<div class="main">
+  <div id="content">
+    <div class="loading">
+      <div class="spinner"></div>
+      Cargando datos...
+    </div>
+  </div>
+</div>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMhzyJwg2uhitJstfxukBFAMYEgAV7iGl0CDEsVJRd4-xjKT6Mo-PnUESW6DeYTay5yZz1iz_HpuOz/pub?gid=0&single=true&output=csv';
+
+let allData = [];
+let currentPlayer = 'todos';
+let charts = {};
+
+function parseDate(ts) {
+  return ts ? new Date(ts) : null;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+function moodLabel(val) {
+  const m = { '1': '😔 Bajo', '2': '😐 Normal', '3': '🙂 Bien', '4': '😄 Muy bien', '5': '🔥 Excelente' };
+  return m[String(val)] || val;
+}
+
+function scoreColor(val, invertido) {
+  const v = Number(val);
+  if (isNaN(v)) return 'neutral';
+  if (invertido) {
+    if (v <= 3) return 'good';
+    if (v <= 6) return 'warn';
+    return 'bad';
+  } else {
+    if (v >= 7) return 'good';
+    if (v >= 4) return 'warn';
+    return 'bad';
+  }
+}
+
+function badgeClass(val, invertido) {
+  const c = scoreColor(val, invertido);
+  return c === 'good' ? 'badge-green' : c === 'warn' ? 'badge-yellow' : 'badge-red';
+}
+
+function loadData() {
+  document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div>Cargando datos...</div>`;
+
+  Papa.parse(CSV_URL + '&t=' + Date.now(), {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      allData = results.data.filter(r => r.jugador && r.jugador.trim());
+      document.getElementById('lastUpdate').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      buildFilters();
+      render();
+    },
+    error: function() {
+      document.getElementById('content').innerHTML = `<div class="empty">No se pudieron cargar los datos. Comprueba la conexión.</div>`;
+    }
+  });
+}
+
+function buildFilters() {
+  const players = [...new Set(allData.map(r => r.jugador).filter(Boolean))].sort();
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = '<span class="filter-label">Jugador:</span>';
+  const all = document.createElement('div');
+  all.className = 'filter-pill' + (currentPlayer === 'todos' ? ' active' : '');
+  all.textContent = 'Todos';
+  all.onclick = () => setPlayer('todos', all);
+  bar.appendChild(all);
+  players.forEach(p => {
+    const pill = document.createElement('div');
+    pill.className = 'filter-pill' + (currentPlayer === p ? ' active' : '');
+    pill.textContent = p;
+    pill.onclick = () => setPlayer(p, pill);
+    bar.appendChild(pill);
+  });
+}
+
+function setPlayer(p, el) {
+  currentPlayer = p;
+  document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function getFiltered() {
+  if (currentPlayer === 'todos') return allData;
+  return allData.filter(r => r.jugador === currentPlayer);
+}
+
+function destroyCharts() {
+  Object.values(charts).forEach(c => { if (c) c.destroy(); });
+  charts = {};
+}
+
+function render() {
+  destroyCharts();
+  const data = getFiltered();
+
+  if (!data.length) {
+    document.getElementById('content').innerHTML = '<div class="empty">No hay datos para mostrar.</div>';
+    return;
+  }
+
+  // Ordenar por fecha
+  const sorted = [...data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const last5 = sorted.slice(-5);
+
+  // Métricas
+  const avgSueno = avg(data.map(r => Number(r.sueno)).filter(x => !isNaN(x) && x > 0));
+  const avgEnergia = avg(data.map(r => Number(r.energia)).filter(x => !isNaN(x) && x > 0));
+  const avgFatiga = avg(data.map(r => Number(r.fatiga_muscular)).filter(x => !isNaN(x) && x > 0));
+  const avgRpe = avg(data.map(r => Number(r.rpe_ayer)).filter(x => !isNaN(x) && x > 0));
+
+  // Alertas
+  const alertas = [];
+  if (currentPlayer === 'todos') {
+    const lastByPlayer = {};
+    [...sorted].reverse().forEach(r => {
+      if (!lastByPlayer[r.jugador]) lastByPlayer[r.jugador] = r;
+    });
+    Object.entries(lastByPlayer).forEach(([jugador, r]) => {
+      if (Number(r.fatiga_muscular) >= 8) alertas.push(`⚠️ <strong>${jugador}</strong> — Fatiga muscular alta (${r.fatiga_muscular}/10)`);
+      if (Number(r.energia) <= 3) alertas.push(`⚠️ <strong>${jugador}</strong> — Energía muy baja (${r.energia}/10)`);
+      if (Number(r.sueno) <= 3) alertas.push(`⚠️ <strong>${jugador}</strong> — Sueño muy malo (${r.sueno}/10)`);
+    });
+  } else {
+    const last = sorted[sorted.length - 1];
+    if (last) {
+      if (Number(last.fatiga_muscular) >= 8) alertas.push(`⚠️ Última sesión — Fatiga muscular alta (${last.fatiga_muscular}/10)`);
+      if (Number(last.energia) <= 3) alertas.push(`⚠️ Última sesión — Energía muy baja (${last.energia}/10)`);
+      if (Number(last.sueno) <= 3) alertas.push(`⚠️ Última sesión — Sueño muy malo (${last.sueno}/10)`);
+    }
+  }
+
+  // Labels para gráficas
+  const chartLabels = sorted.map(r => {
+    const d = parseDate(r.timestamp);
+    return d ? formatDate(d) : '—';
+  });
+
+  document.getElementById('content').innerHTML = `
+    <div class="alerts" id="alertsContainer"></div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Respuestas</div>
+        <div class="kpi-val neutral">${data.length}</div>
+        <div class="kpi-sub">${currentPlayer === 'todos' ? 'total' : 'de este jugador'}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sueño medio</div>
+        <div class="kpi-val ${scoreColor(avgSueno, false)}">${avgSueno.toFixed(1)}</div>
+        <div class="kpi-sub">sobre 10</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Energía media</div>
+        <div class="kpi-val ${scoreColor(avgEnergia, false)}">${avgEnergia.toFixed(1)}</div>
+        <div class="kpi-sub">sobre 10</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Fatiga media</div>
+        <div class="kpi-val ${scoreColor(avgFatiga, true)}">${avgFatiga.toFixed(1)}</div>
+        <div class="kpi-sub">sobre 10</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">RPE medio</div>
+        <div class="kpi-val neutral">${avgRpe.toFixed(1)}</div>
+        <div class="kpi-sub">intensidad percibida</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Sueño y Energía</div>
+        <canvas id="chartSueno" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Fatiga muscular</div>
+        <canvas id="chartFatiga" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>Últimas respuestas</h3></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              ${currentPlayer === 'todos' ? '<th>Jugador</th>' : ''}
+              <th>Sueño</th>
+              <th>Energía</th>
+              <th>Fatiga</th>
+              <th>Ánimo</th>
+              <th>RPE</th>
+              <th>Molestia</th>
+              <th>Trabajo extra</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${[...sorted].reverse().slice(0, 20).map(r => `
+              <tr>
+                <td>${formatDate(parseDate(r.timestamp))}</td>
+                ${currentPlayer === 'todos' ? `<td><strong>${r.jugador || '—'}</strong></td>` : ''}
+                <td><span class="badge ${badgeClass(r.sueno, false)}">${r.sueno || '—'}</span></td>
+                <td><span class="badge ${badgeClass(r.energia, false)}">${r.energia || '—'}</span></td>
+                <td><span class="badge ${badgeClass(r.fatiga_muscular, true)}">${r.fatiga_muscular || '—'}</span></td>
+                <td>${moodLabel(r.estado_animo)}</td>
+                <td>${r.rpe_ayer || '—'}</td>
+                <td>${r.molestia || '—'}</td>
+                <td>${r.trabajo_complementario || '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Alertas
+  const alertsEl = document.getElementById('alertsContainer');
+  alertas.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'alert';
+    div.innerHTML = a;
+    alertsEl.appendChild(div);
+  });
+
+  // Gráfica sueño + energía
+  charts.sueno = new Chart(document.getElementById('chartSueno'), {
+    type: 'line',
+    data: {
+      labels: chartLabels,
+      datasets: [
+        {
+          label: 'Sueño',
+          data: sorted.map(r => Number(r.sueno) || null),
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,0.08)',
+          tension: 0.3,
+          fill: true,
+          pointRadius: 4,
+        },
+        {
+          label: 'Energía',
+          data: sorted.map(r => Number(r.energia) || null),
+          borderColor: '#E05A2B',
+          backgroundColor: 'rgba(224,90,43,0.06)',
+          tension: 0.3,
+          fill: false,
+          pointRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { min: 0, max: 10, ticks: { stepSize: 2 }, grid: { color: '#f0f0f0' } },
+        x: { ticks: { font: { size: 10 } } }
+      },
+      plugins: { legend: { labels: { font: { size: 11 } } } }
+    }
+  });
+
+  // Gráfica fatiga
+  charts.fatiga = new Chart(document.getElementById('chartFatiga'), {
+    type: 'bar',
+    data: {
+      labels: chartLabels,
+      datasets: [{
+        label: 'Fatiga muscular',
+        data: sorted.map(r => Number(r.fatiga_muscular) || null),
+        backgroundColor: sorted.map(r => {
+          const v = Number(r.fatiga_muscular);
+          if (v >= 8) return 'rgba(239,68,68,0.7)';
+          if (v >= 5) return 'rgba(245,158,11,0.7)';
+          return 'rgba(34,197,94,0.7)';
+        }),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { min: 0, max: 10, ticks: { stepSize: 2 }, grid: { color: '#f0f0f0' } },
+        x: { ticks: { font: { size: 10 } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
