@@ -90,8 +90,9 @@
 
     <div class="section">
       <div class="section-label"><i class="ti ti-user"></i> Jugador</div>
-      <div class="q-title">¿Cuál es tu nombre?</div>
-      <input class="player-input" type="text" id="playerName" placeholder="Nombre y apellido..." />
+      <div class="q-title">¿Cuál es tu nombre y apellidos?</div>
+      <input class="player-input" type="text" id="playerFirstName" placeholder="Nombre..." style="margin-bottom: 8px;" />
+      <input class="player-input" type="text" id="playerLastName" placeholder="Apellidos..." />
     </div>
 
     <div class="section">
@@ -191,9 +192,13 @@
   window.addEventListener('DOMContentLoaded', () => {
     const nameParam = getParam('jugador');
     if (nameParam) {
-      const input = document.getElementById('playerName');
-      input.value = decodeURIComponent(nameParam);
-      input.readOnly = true;
+      const parts = decodeURIComponent(nameParam).split(' ');
+      const first = document.getElementById('playerFirstName');
+      const last = document.getElementById('playerLastName');
+      first.value = parts[0] || '';
+      last.value = parts.slice(1).join(' ') || '';
+      first.readOnly = true;
+      last.readOnly = true;
     }
   });
 
@@ -212,12 +217,14 @@
   }
 
   function validate() {
-    const name = document.getElementById('playerName').value.trim();
+    const firstName = document.getElementById('playerFirstName').value.trim();
+    const lastName = document.getElementById('playerLastName').value.trim();
     const mood = document.querySelector('#moodRow .selected');
     const molestia = document.getElementById('molestia').value.trim();
     const trabajo = document.getElementById('trabajo_complementario').value.trim();
 
-    if (!name) { document.getElementById('playerName').classList.add('field-error'); return false; }
+    if (!firstName) { document.getElementById('playerFirstName').classList.add('field-error'); return false; }
+    if (!lastName) { document.getElementById('playerLastName').classList.add('field-error'); return false; }
     if (!touched.sleep) { document.getElementById('sleep').classList.add('field-error'); return false; }
     if (!touched.energy) { document.getElementById('energy').classList.add('field-error'); return false; }
     if (!touched.fatigue) { document.getElementById('fatigue').classList.add('field-error'); return false; }
@@ -244,7 +251,7 @@
 
     const payload = {
       jugador_id: getParam('id') || null,
-      jugador: document.getElementById('playerName').value.trim(),
+      jugador: (document.getElementById('playerFirstName').value.trim() + ' ' + document.getElementById('playerLastName').value.trim()).trim(),
       sueno: Number(document.getElementById('sleep').value),
       energia: Number(document.getElementById('energy').value),
       fatiga_muscular: Number(document.getElementById('fatigue').value),
